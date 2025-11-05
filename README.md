@@ -5,6 +5,10 @@ An AI-powered agent that generates personalized broadband comparison URLs throug
 ## 🚀 Quick Start
 
 ```bash
+# Create and activate virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
 # Install dependencies
 pip install -r requirements.txt
 
@@ -16,6 +20,8 @@ streamlit run app.py
 ```
 
 The app will open in your browser at `http://localhost:8501`
+
+**Note**: If you encounter import errors, make sure the virtual environment is activated with `source venv/bin/activate`
 
 ## ✨ Features
 
