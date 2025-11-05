@@ -297,6 +297,7 @@ class URLGenerator:
                 success=False,
                 message=f"Failed to generate valid URL: {self._format_validation_errors(ve)}",
                 parameters_used=params.model_dump(exclude_none=True),
+                url=None
             )
     
     def _format_validation_errors(self, error: ValidationError) -> str:
