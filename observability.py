@@ -7,11 +7,9 @@ Refactored to support dependency injection - no global singletons.
 
 import logging
 import json
-import time
 from datetime import datetime
-from typing import Dict, Any, Optional, Callable
+from typing import Dict, Any, Optional
 from pathlib import Path
-from functools import wraps
 
 
 def _configure_logger(name: str, log_file: str = 'agent_interactions.log') -> logging.Logger:
@@ -199,126 +197,4 @@ def create_interaction_logger(log_file: str = "agent_interactions.jsonl") -> Int
     return InteractionLogger(log_file=log_file)
 
 
-def trace_tool_call(logger_instance: InteractionLogger) -> Callable:
-    """
-    Create a decorator to trace tool function calls with a specific logger.
-    
-    Args:
-        logger_instance: The InteractionLogger instance to use for logging
-        
-    Returns:
-        A decorator function that traces tool calls
-    """
-    def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            start_time = time.time()
-            tool_name = func.__name__
-            
-            # Extract input parameters
-            # Skip first arg if it's RunContext (common in Pydantic AI tools)
-            input_params: Dict[str, Any] = {}
-            if args:
-                # Check if first arg looks like RunContext (has certain attributes)
-                # or if we have more than one arg, start from second arg
-                start_idx = 1 if len(args) > 1 and hasattr(args[0], 'deps') else 0
-                
-                if start_idx < len(args):
-                    # Assume first arg after RunContext is the request model
-                    if hasattr(args[start_idx], 'model_dump'):
-                        input_params = args[start_idx].model_dump()
-                    else:
-                        input_params = {"args": str(args[start_idx:])}
-                else:
-                    input_params = {"args": str(args)}
-            input_params.update(kwargs)
-            
-            try:
-                # Execute the function
-                result = func(*args, **kwargs)
-                
-                # Extract output
-                if hasattr(result, 'model_dump'):
-                    output = result.model_dump()
-                else:
-                    output = {"result": str(result)}
-                
-                execution_time = time.time() - start_time
-                
-                # Log successful tool call
-                logger_instance.log_tool_call(
-                    tool_name=tool_name,
-                    input_params=input_params,
-                    output=output,
-                    execution_time=execution_time,
-                    success=True
-                )
-                
-                return result
-                
-            except Exception as e:
-                execution_time = time.time() - start_time
-                
-                # Log failed tool call
-                logger_instance.log_tool_call(
-                    tool_name=tool_name,
-                    input_params=input_params,
-                    output={"error": str(e)},
-                    execution_time=execution_time,
-                    success=False
-                )
-                
-                logger_instance.log_error(e, {"tool_name": tool_name})
-                raise
-        
-        return wrapper
-    
-    return decorator
-
-
-def get_interaction_stats(log_file: str = "agent_interactions.jsonl") -> Dict[str, Any]:
-    """Get statistics from interaction logs."""
-    log_path = Path(log_file)
-    if not log_path.exists():
-        return {"total_interactions": 0, "total_tool_calls": 0}
-    
-    stats = {
-        "total_interactions": 0,
-        "total_tool_calls": 0,
-        "total_errors": 0,
-        "avg_execution_time": 0.0,
-        "tool_call_counts": {},
-    }
-    
-    execution_times = []
-    
-    with open(log_path, "r") as f:
-        for line in f:
-            try:
-                entry = json.loads(line)
-                if entry.get("type") == "tool_call":
-                    stats["total_tool_calls"] += 1
-                    tool_name = entry.get("tool_name", "unknown")
-                    stats["tool_call_counts"][tool_name] = stats["tool_call_counts"].get(tool_name, 0) + 1
-                    
-                    if entry.get("execution_time_seconds"):
-                        execution_times.append(entry["execution_time_seconds"])
-                    
-                    if not entry.get("success", True):
-                        stats["total_errors"] += 1
-                elif "user_message" in entry:
-                    stats["total_interactions"] += 1
-                    if entry.get("execution_time_seconds"):
-                        execution_times.append(entry["execution_time_seconds"])
-                elif entry.get("type") == "error":
-                    stats["total_errors"] += 1
-            except json.JSONDecodeError:
-                continue
-    
-    if execution_times:
-        stats["avg_execution_time"] = sum(execution_times) / len(execution_times)
-        stats["min_execution_time"] = min(execution_times)
-        stats["max_execution_time"] = max(execution_times)
-    
-    return stats
 

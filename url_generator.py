@@ -11,7 +11,7 @@ Refactored to use dependency injection pattern:
 from __future__ import annotations
 
 import re
-from typing import Optional, List, Dict, Tuple, Any
+from typing import Optional, List, Dict, Any
 from urllib.parse import quote, urlparse, urlunparse
 from enum import Enum
 
@@ -359,35 +359,3 @@ class URLGenerator:
             )
         
         return suggestions[:3]  # Limit to 3 suggestions
-
-
-# --- Backward compatibility function ---
-def generate_broadband_url(params: BroadbandParams) -> Tuple[str, Optional[str]]:
-    """
-    Generate broadband comparison URL.
-    
-    Args:
-        params: Validated BroadbandParams Pydantic model
-        
-    Returns:
-        (url_str, None) when successful, or ("", error_message) on failure
-    """
-    generator = URLGenerator()
-    result = generator.generate(params)
-    
-    return (str(result.url), None) if result.success and result.url else ("", result.message)
-
-
-# --- Parameter help (for UI / agent) ---
-def get_parameter_help() -> Dict[str, str]:
-    return {
-        "postcode": "Required. UK postcode (e.g., E14 9WB, SW10 9PA)",
-        "speedInMb": f"Optional. Valid options: {', '.join(VALID_SPEEDS)}",
-        "contractLength": f"Optional. Valid options: {', '.join(VALID_CONTRACT_LENGTHS)}",
-        "phoneCalls": f"Optional. Valid options: {', '.join(VALID_PHONE_CALLS)}",
-        "productType": f"Optional. Valid options: {', '.join(VALID_PRODUCT_TYPES)}",
-        "providers": "Optional. Comma-separated provider names or list (e.g., 'Hyperoptic,BT' or ['BT','Sky'])",
-        "currentProvider": "Optional. User's existing provider name",
-        "newLine": "Optional. Boolean: True if new line required",
-        "sortBy": f"Optional. Valid options: {', '.join(VALID_SORT_BY)}",
-    }

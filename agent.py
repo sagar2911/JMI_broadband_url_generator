@@ -6,7 +6,6 @@ following Pydantic AI best practices.
 """
 
 import logging
-import time
 from typing import Optional, Dict, Any, List
 
 from dotenv import load_dotenv

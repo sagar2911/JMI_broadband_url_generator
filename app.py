@@ -9,15 +9,14 @@ Features:
 - Clean, demo-friendly UI
 """
 
-import json
 from pathlib import Path
 from typing import List, Optional
 
 import streamlit as st
 from pydantic_ai.messages import ModelMessage, ModelMessagesTypeAdapter
 
-from agent import chat_with_agent, get_agent, reset_agent
-from config import create_default_dependencies, AgentDependencies
+from agent import get_agent, reset_agent
+from config import create_default_dependencies
 
 
 # Configuration
