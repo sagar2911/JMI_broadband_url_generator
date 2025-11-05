@@ -9,7 +9,7 @@ An AI-powered agent that generates personalized broadband comparison URLs throug
 pip install -r requirements.txt
 
 # Set up API key (required)
-export GOOGLE_API_KEY="your-api-key"
+export GEMINI_API_KEY="your-api-key"
 
 # Run the Streamlit web app
 streamlit run app.py
