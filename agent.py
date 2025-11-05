@@ -16,7 +16,7 @@ from url_generator import (
     BroadbandParams,
     URLGenerationResult,
 )
-from config import AgentDependencies, create_default_dependencies
+from config import AgentDependencies
 
 # Load environment variables
 load_dotenv()
@@ -182,13 +182,13 @@ def _create_agent(deps: AgentDependencies) -> Agent[AgentDependencies, AgentOutp
     return agent
 
 
-def get_agent(deps: Optional[AgentDependencies] = None) -> Agent[AgentDependencies, AgentOutput]:
+def get_agent(deps: AgentDependencies) -> Agent[AgentDependencies, AgentOutput]:
     """
     Get or create the agent singleton.
     
     Args:
-        deps: Optional dependencies. If None, creates default dependencies.
-              Only used on first call.
+        deps: Required dependencies. Must be provided by the caller (typically app.py).
+              Only used on first call to create the agent instance.
     
     Returns:
         Agent instance
@@ -196,8 +196,6 @@ def get_agent(deps: Optional[AgentDependencies] = None) -> Agent[AgentDependenci
     global _agent_instance
     
     if _agent_instance is None:
-        if deps is None:
-            deps = create_default_dependencies()
         _agent_instance = _create_agent(deps)
         logger.info("Created new agent instance")
     
