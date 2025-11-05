@@ -121,23 +121,17 @@ class InteractionLogger:
             success: Whether the tool call succeeded
         """
         # Convert output to JSON-serializable format
-        def make_serializable(obj):
-            """Convert Pydantic models and HttpUrl to JSON-serializable format."""
-            if hasattr(obj, 'model_dump'):
-                return obj.model_dump(mode='json')
-            elif hasattr(obj, '__str__'):
-                return str(obj)
-            return obj
-        
-        # Process output to ensure it's JSON serializable
         serializable_output = {}
         for key, value in output.items():
             try:
-                # Try to serialize to test if it's already serializable
                 json.dumps(value)
                 serializable_output[key] = value
             except (TypeError, ValueError):
-                serializable_output[key] = make_serializable(value)
+                # Handle Pydantic models and other non-serializable types
+                if hasattr(value, 'model_dump'):
+                    serializable_output[key] = value.model_dump(mode='json')
+                else:
+                    serializable_output[key] = str(value)
         
         tool_call = {
             "timestamp": datetime.utcnow().isoformat(),

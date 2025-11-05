@@ -9,12 +9,11 @@ Features:
 - Clean, demo-friendly UI
 """
 
-import streamlit as st
 import json
 from pathlib import Path
 from typing import List, Optional
-import webbrowser
 
+import streamlit as st
 from pydantic_ai.messages import ModelMessage, ModelMessagesTypeAdapter
 
 from agent import chat_with_agent, get_agent, reset_agent
@@ -146,56 +145,42 @@ def extract_conversation_from_history(messages: List[ModelMessage]) -> List[dict
     """
     conversation = []
     
-    try:
-        for idx, msg in enumerate(messages):
-            # Pydantic AI messages have a 'kind' attribute
-            if not hasattr(msg, 'kind'):
-                continue
-            
-            msg_kind = str(msg.kind)
-            
-            # Request messages contain user input
-            if msg_kind == 'request' and hasattr(msg, 'parts'):
-                for part in msg.parts:
-                    if hasattr(part, 'part_kind'):
-                        part_kind = str(part.part_kind)
-                        
-                        # User prompt
-                        if part_kind == 'user-prompt' and hasattr(part, 'content'):
-                            content = part.content
-                            if content and content.strip():
-                                conversation.append({
-                                    'role': 'user',
-                                    'content': content.strip(),
-                                    'key': f"user_{idx}_{len(conversation)}"
-                                })
-            
-            # Response messages contain model output
-            elif msg_kind == 'response' and hasattr(msg, 'parts'):
-                for part in msg.parts:
-                    if hasattr(part, 'part_kind'):
-                        part_kind = str(part.part_kind)
-                        
-                        # Tool call with final_result (contains our AgentOutput)
-                        if part_kind == 'tool-call' and hasattr(part, 'tool_name'):
-                            if part.tool_name == 'final_result' and hasattr(part, 'args'):
-                                args = part.args
-                                message = args.get('message', '')
-                                urls = args.get('urls', [])
-                                
-                                if message:
-                                    conversation.append({
-                                        'role': 'assistant',
-                                        'content': message,
-                                        'urls': urls if urls else None,
-                                        'key': f"assistant_{idx}_{len(conversation)}"
-                                    })
-    
-    except Exception as e:
-        # If extraction fails, return what we have so far
-        st.error(f"Error extracting conversation: {e}")
-        import traceback
-        traceback.print_exc()
+    for idx, msg in enumerate(messages):
+        # All Pydantic AI messages have 'kind' and 'parts'
+        msg_kind = str(msg.kind)
+        
+        # Request messages contain user input
+        if msg_kind == 'request':
+            for part in msg.parts:
+                part_kind = str(part.part_kind)
+                
+                if part_kind == 'user-prompt' and part.content:
+                    content = part.content.strip()
+                    if content:
+                        conversation.append({
+                            'role': 'user',
+                            'content': content,
+                            'key': f"user_{idx}_{len(conversation)}"
+                        })
+        
+        # Response messages contain model output
+        elif msg_kind == 'response':
+            for part in msg.parts:
+                part_kind = str(part.part_kind)
+                
+                # Tool call with final_result contains our AgentOutput
+                if part_kind == 'tool-call' and part.tool_name == 'final_result':
+                    args = part.args
+                    message = args.get('message', '')
+                    urls = args.get('urls', [])
+                    
+                    if message:
+                        conversation.append({
+                            'role': 'assistant',
+                            'content': message,
+                            'urls': urls if urls else None,
+                            'key': f"assistant_{idx}_{len(conversation)}"
+                        })
     
     return conversation
 

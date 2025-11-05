@@ -234,18 +234,7 @@ class URLGenerator:
         Returns:
             URLGenerationResult with url and metadata
         """
-        # Validate params if dict was passed somehow
-        if not isinstance(params, BroadbandParams):
-            try:
-                params = BroadbandParams.model_validate(params)  # type: ignore[arg-type]
-            except ValidationError as e:
-                return URLGenerationResult(
-                    success=False,
-                    message=f"Invalid parameters: {self._format_validation_errors(e)}",
-                    parameters_used={},
-                )
-        
-        # Location query from postcode
+        # Pydantic ensures params is validated BroadbandParams
         location = params.postcode_for_url()
         
         # Build fragment params - using string values where needed
@@ -374,10 +363,10 @@ class URLGenerator:
 # --- Backward compatibility function ---
 def generate_broadband_url(params: BroadbandParams) -> Tuple[str, Optional[str]]:
     """
-    Legacy function for backward compatibility.
+    Generate broadband comparison URL.
     
     Args:
-        params: BroadbandParams Pydantic model
+        params: Validated BroadbandParams Pydantic model
         
     Returns:
         (url_str, None) when successful, or ("", error_message) on failure
@@ -385,10 +374,7 @@ def generate_broadband_url(params: BroadbandParams) -> Tuple[str, Optional[str]]
     generator = URLGenerator()
     result = generator.generate(params)
     
-    if result.success and result.url:
-        return str(result.url), None
-    else:
-        return "", result.message
+    return (str(result.url), None) if result.success and result.url else ("", result.message)
 
 
 # --- Parameter help (for UI / agent) ---
