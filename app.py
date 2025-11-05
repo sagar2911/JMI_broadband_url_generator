@@ -233,7 +233,9 @@ def main():
         
         # Stats
         st.header("📊 Stats")
-        st.metric("Messages", len(st.session_state[SESSION_KEY_MESSAGES]))
+        # Count actual conversation turns (user + assistant pairs), not internal messages
+        conversation = extract_conversation_from_history(st.session_state[SESSION_KEY_MESSAGES])
+        st.metric("Conversation Turns", len(conversation))
         
         # Example queries
         st.markdown("---")
